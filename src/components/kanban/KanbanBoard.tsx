@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from "react";
 import {
   CheckCircle2,
   Circle,
@@ -9,31 +9,31 @@ import {
   RefreshCw,
   Search,
   X,
-} from 'lucide-react';
-import { Badge } from '../../components/ui/badge';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
+} from "lucide-react";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../components/ui/select';
-import { KANBAN_COLUMNS } from '../../data/kanban';
-import { useKanbanStore } from '../../store/useKanbanStore';
+} from "../../components/ui/select";
+import { KANBAN_COLUMNS } from "../../data/kanban";
+import { useKanbanStore } from "../../store/useKanbanStore";
 import type {
   CreateTaskPayload,
   Task,
   TaskPriority,
   TaskStatus,
-} from '../../types/kanban';
-import { TaskCard } from './TaskCard';
-import { TaskDialog } from './TaskDialog';
+} from "../../types/kanban";
+import { TaskCard } from "./TaskCard";
+import { TaskDialog } from "./TaskDialog";
 
 const columnIcons: Record<TaskStatus, ReactNode> = {
   todo: <Circle className="h-3.5 w-3.5 text-muted-foreground" />,
-  'in-progress': <CircleDot className="h-3.5 w-3.5 text-amber-500" />,
+  "in-progress": <CircleDot className="h-3.5 w-3.5 text-amber-500" />,
   done: <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />,
 };
 
@@ -48,13 +48,13 @@ export function KanbanBoard() {
     deleteTask,
   } = useKanbanStore();
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState<'all' | TaskPriority>(
-    'all'
+  const [searchQuery, setSearchQuery] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState<"all" | TaskPriority>(
+    "all",
   );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [defaultStatus, setDefaultStatus] = useState<TaskStatus>('todo');
+  const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("todo");
 
   useEffect(() => {
     void fetchTasks();
@@ -62,7 +62,7 @@ export function KanbanBoard() {
 
   const filteredTasks = tasks.filter((task) => {
     const matchesPriority =
-      priorityFilter === 'all' || task.priority === priorityFilter;
+      priorityFilter === "all" || task.priority === priorityFilter;
     const keyword = searchQuery.toLowerCase().trim();
     const matchesQuery =
       !keyword ||
@@ -71,7 +71,7 @@ export function KanbanBoard() {
     return matchesPriority && matchesQuery;
   });
 
-  const handleOpenCreate = (status: TaskStatus = 'todo') => {
+  const handleOpenCreate = (status: TaskStatus = "todo") => {
     setEditingTask(null);
     setDefaultStatus(status);
     setDialogOpen(true);
@@ -85,10 +85,9 @@ export function KanbanBoard() {
 
   const handleDialogSubmit = async (payload: CreateTaskPayload) => {
     if (editingTask) {
-      await updateTask(editingTask.id, payload);
-    } else {
-      await addTask(payload);
+      return await updateTask(editingTask.id, payload);
     }
+    return await addTask(payload);
   };
 
   const handleStatusChange = (id: string, status: TaskStatus) => {
@@ -101,7 +100,6 @@ export function KanbanBoard() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Top Workspace Bar */}
       <header className="sticky top-0 z-10 border-b border-border/60 bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="flex items-center gap-3">
@@ -126,7 +124,7 @@ export function KanbanBoard() {
               {searchQuery && (
                 <button
                   type="button"
-                  onClick={() => setSearchQuery('')}
+                  onClick={() => setSearchQuery("")}
                   className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   aria-label="Hapus pencarian"
                 >
@@ -138,7 +136,7 @@ export function KanbanBoard() {
             <Select
               value={priorityFilter}
               onValueChange={(val) =>
-                setPriorityFilter(val as 'all' | TaskPriority)
+                setPriorityFilter(val as "all" | TaskPriority)
               }
             >
               <SelectTrigger className="h-8 w-[116px] bg-muted/40 text-xs shadow-none">
@@ -170,7 +168,7 @@ export function KanbanBoard() {
               aria-label="Sinkronkan task"
             >
               <RefreshCw
-                className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`}
+                className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`}
               />
             </Button>
 
@@ -178,7 +176,7 @@ export function KanbanBoard() {
               type="button"
               size="sm"
               className="h-8 gap-1.5 px-3 text-xs shadow-none"
-              onClick={() => handleOpenCreate('todo')}
+              onClick={() => handleOpenCreate("todo")}
             >
               <Plus className="h-3.5 w-3.5" />
               New Task
@@ -207,7 +205,7 @@ export function KanbanBoard() {
         <div className="grid flex-1 grid-cols-1 gap-5 md:grid-cols-3">
           {KANBAN_COLUMNS.map((column) => {
             const columnTasks = filteredTasks.filter(
-              (task) => task.status === column.id
+              (task) => task.status === column.id,
             );
 
             return (
@@ -284,7 +282,7 @@ export function KanbanBoard() {
             ? editingTask.id
             : dialogOpen
               ? `create-${defaultStatus}`
-              : 'create-closed'
+              : "create-closed"
         }
         open={dialogOpen}
         onOpenChange={setDialogOpen}
