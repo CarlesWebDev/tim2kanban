@@ -30,6 +30,7 @@ import type {
 } from "../../types/kanban";
 import { TaskCard } from "./TaskCard";
 import { TaskDialog } from "./TaskDialog";
+import { DeleteTaskDialog } from "./DeleteTaskDialog";
 
 const columnIcons: Record<TaskStatus, ReactNode> = {
   todo: <Circle className="h-3.5 w-3.5 text-muted-foreground" />,
@@ -55,6 +56,7 @@ export function KanbanBoard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("todo");
+  const [deletingTask, setDeletingTask] = useState<Task | null>(null);
 
   useEffect(() => {
     void fetchTasks();
@@ -77,6 +79,15 @@ export function KanbanBoard() {
     setDialogOpen(true);
   };
 
+  const handleRequestDelete = (id: string) => {
+    const target = tasks.find((task) => task.id === id) ?? null;
+    setDeletingTask(target);
+  };
+
+  const handleConfirmDelete = async (id: string) => {
+    await deleteTask(id);
+  };
+
   const handleOpenEdit = (task: Task) => {
     setEditingTask(task);
     setDefaultStatus(task.status);
@@ -94,9 +105,6 @@ export function KanbanBoard() {
     void updateTask(id, { status });
   };
 
-  const handleDelete = (id: string) => {
-    void deleteTask(id);
-  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -264,7 +272,7 @@ export function KanbanBoard() {
                         key={task.id}
                         task={task}
                         onEdit={handleOpenEdit}
-                        onDelete={handleDelete}
+                        onDelete={handleRequestDelete}
                         onStatusChange={handleStatusChange}
                       />
                     ))
@@ -289,6 +297,13 @@ export function KanbanBoard() {
         initialTask={editingTask}
         defaultStatus={defaultStatus}
         onSubmit={handleDialogSubmit}
+      />
+      <DeleteTaskDialog
+        task={deletingTask}
+        onOpenChange={(open) => {
+          if (!open) setDeletingTask(null);
+        }}
+        onConfirm={handleConfirmDelete}
       />
     </div>
   );
