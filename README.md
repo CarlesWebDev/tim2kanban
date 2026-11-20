@@ -1,36 +1,116 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📋 Tim 2 Kanban Board App
 
-## Getting Started
+Sebuah aplikasi manajemen tugas interaktif berbasis Kanban Board yang dibangun menggunakan **Next.js 15 (App Router)**, **Hono**, **TypeScript**, dan **Tailwind CSS**. 
 
-First, run the development server:
+Aplikasi ini menggunakan **Hono** sebagai framework backend modern yang berjalan di dalam *Catch-all API Route* Next.js, serta menggunakan Zustand untuk pengelolaan state global dan Shadcn UI untuk komponen antarmukanya.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## 🚀 Layar Teknologi (Tech Stack)
+
+* **Frontend Framework**: [Next.js](https://nextjs.org/) (App Router)
+* **Backend Framework**: [Hono](https://hono.dev/) (di dalam API Route Handlers)
+* **Language**: [TypeScript](https://www.typescriptlang.org/)
+* **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+* **UI Components**: Shadcn UI / Radix UI
+* **State Management**: Zustand (`store/useKanbanStore.ts`)
+* **Package Manager**: **npm**
+
+---
+
+## 📂 Struktur Proyek
+
+Berikut adalah struktur file dan folder dari proyek ini:
+
+```text
+tim2kanban/
+├── README.md                 # Dokumentasi utama proyek
+├── AGENTS.md                 # Panduan / arahan AI agent
+├── components.json           # Konfigurasi Shadcn UI
+├── eslint.config.mjs         # Konfigurasi ESLint
+├── next.config.ts            # Konfigurasi Next.js
+├── package.json              # Dependencies dan npm scripts
+├── tsconfig.json             # Konfigurasi TypeScript
+└── src/
+    ├── app/                  # Next.js App Router (Halaman & Layout)
+    │   ├── globals.css       # Style global CSS & Tailwind import
+    │   ├── layout.tsx        # Root layout aplikasi
+    │   ├── page.tsx          # Halaman utama Kanban
+    │   ├── api/
+    │   │   └── [[...route]]/
+    │   │       └── route.ts  # Hono API Backend Entrypoint
+    │   └── lib/
+    │       └── utils.ts      # Helper utilities (cn, clsx)
+    ├── components/           # Komponen React modular
+    │   ├── kanban/           # Komponen spesifik Kanban (Board, Card, Dialog)
+    │   │   ├── KanbanBoard.tsx
+    │   │   ├── TaskCard.tsx
+    │   │   └── TaskDialog.tsx
+    │   └── ui/               # Komponen UI dasar (Button, Dialog, Card, dll)
+    │       ├── badge.tsx
+    │       ├── button.tsx
+    │       ├── card.tsx
+    │       ├── dialog.tsx
+    │       ├── input.tsx
+    │       └── select.tsx
+    ├── data/                 # Mock / Initial Data
+    │   └── kanban.ts
+    ├── store/                # Global State Store (Zustand)
+    │   └── useKanbanStore.ts
+    └── types/                # Definisi Type & Interface TypeScript
+        └── kanban.ts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ⚡ Backend API (Hono)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Backend API ditangani secara efisien oleh **Hono** melalui Next.js catch-all route di `src/app/api/[[...route]]/route.ts`.
 
-## Learn More
+* **Base Endpoint API**: `http://localhost:3000/api`
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 💻 Panduan Memulai (Getting Started)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Prasyarat
 
-## Deploy on Vercel
+Pastikan Anda telah menginstal:
+* [Node.js](https://nodejs.org/) (versi 18.x atau lebih baru)
+* **npm**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Langkah Instalasi
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Clone repositori ini:**
+   ```bash
+   git clone https://github.com/carleswebdev/carleswebdev-tim2kanban.git
+   cd tim2kanban
+   ```
+
+2. **Install dependencies menggunakan npm:**
+   ```bash
+   npm install
+   ```
+
+3. **Jalankan server pengembangan (Development Server):**
+   ```bash
+   npm run dev
+   ```
+
+4. **Buka aplikasi:**
+   Buka [http://localhost:3000](http://localhost:3000) pada browser Anda.
+
+---
+
+## 📜 Script npm yang Tersedia
+
+**npm** untuk menjalankan perintah-perintah berikut:
+
+| Script | Deskripsi |
+| :--- | :--- |
+| `npm run dev` | Menjalankan aplikasi dalam mode pengembangan |
+| `npm run build` | Membuat build produksi teroptimasi |
+| `npm run start` | Menjalankan server produksi hasil build |
+| `npm run lint` | Mengecek kualitas dan kebersihan kode dengan ESLint |
+
+---
