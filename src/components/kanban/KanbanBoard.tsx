@@ -1,12 +1,10 @@
 "use client";
-
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   CheckCircle2,
   Circle,
   CircleDot,
   Plus,
-  RefreshCw,
   Search,
   X,
 } from "lucide-react";
@@ -20,8 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
-import { KANBAN_COLUMNS } from "../../data/kanban";
-import { useKanbanStore } from "../../store/useKanbanStore";
 import type {
   CreateTaskPayload,
   Task,
@@ -32,6 +28,39 @@ import { TaskCard } from "./TaskCard";
 import { TaskDialog } from "./TaskDialog";
 import { DeleteTaskDialog } from "./DeleteTaskDialog";
 
+const KANBAN_COLUMNS: { id: TaskStatus; title: string }[] = [
+  { id: "todo", title: "To Do" },
+  { id: "in-progress", title: "In Progress" },
+  { id: "done", title: "Done" },
+];
+
+const INITIAL_TASKS: Task[] = [
+  {
+    id: "task-a1b2c3",
+    title: "Setup project Next.js",
+    description: "Inisialisasi project, Tailwind v4, dan shadcn/ui.",
+    status: "done",
+    priority: "high",
+  },
+  {
+    id: "task-d4e5f6",
+    title: "Bikin komponen TaskCard",
+    description: "Card task dengan badge priority dan select status.",
+    status: "in-progress",
+    priority: "medium",
+  },
+  {
+    id: "task-g7h8i9",
+    title: "Tambah fitur drag and drop",
+    description: "Pindahin task antar kolom dengan drag and drop.",
+    status: "todo",
+    priority: "low",
+  },
+];
+
+const generateId = () =>
+  `task-${crypto.randomUUID().replace(/-/g, "").slice(0, 6)}`;
+
 const columnIcons: Record<TaskStatus, ReactNode> = {
   todo: <Circle className="h-3.5 w-3.5 text-muted-foreground" />,
   "in-progress": <CircleDot className="h-3.5 w-3.5 text-amber-500" />,
@@ -39,15 +68,8 @@ const columnIcons: Record<TaskStatus, ReactNode> = {
 };
 
 export function KanbanBoard() {
-  const {
-    tasks,
-    isLoading,
-    error,
-    fetchTasks,
-    addTask,
-    updateTask,
-    deleteTask,
-  } = useKanbanStore();
+  // Data lokal (FE only), tanpa store dan tanpa backend
+  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<"all" | TaskPriority>(
@@ -57,10 +79,6 @@ export function KanbanBoard() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("todo");
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
-
-  useEffect(() => {
-    void fetchTasks();
-  }, [fetchTasks]);
 
   const filteredTasks = tasks.filter((task) => {
     const matchesPriority =
@@ -85,7 +103,7 @@ export function KanbanBoard() {
   };
 
   const handleConfirmDelete = async (id: string) => {
-    await deleteTask(id);
+    setTasks((prev) => prev.filter((task) => task.id !== id));
   };
 
   const handleOpenEdit = (task: Task) => {
@@ -96,15 +114,22 @@ export function KanbanBoard() {
 
   const handleDialogSubmit = async (payload: CreateTaskPayload) => {
     if (editingTask) {
-      return await updateTask(editingTask.id, payload);
+      setTasks((prev) =>
+        prev.map((task) =>
+          task.id === editingTask.id ? { ...task, ...payload } : task,
+        ),
+      );
+    } else {
+      setTasks((prev) => [{ id: generateId(), ...payload }, ...prev]);
     }
-    return await addTask(payload);
+    return { ok: true };
   };
 
   const handleStatusChange = (id: string, status: TaskStatus) => {
-    void updateTask(id, { status });
+    setTasks((prev) =>
+      prev.map((task) => (task.id === id ? { ...task, status } : task)),
+    );
   };
-
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -168,20 +193,6 @@ export function KanbanBoard() {
 
             <Button
               type="button"
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 border-border/70 shadow-none"
-              onClick={() => void fetchTasks()}
-              disabled={isLoading}
-              aria-label="Sinkronkan task"
-            >
-              <RefreshCw
-                className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`}
-              />
-            </Button>
-
-            <Button
-              type="button"
               size="sm"
               className="h-8 gap-1.5 px-3 text-xs shadow-none"
               onClick={() => handleOpenCreate("todo")}
@@ -195,21 +206,6 @@ export function KanbanBoard() {
 
       {/* Main Board Canvas */}
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-        {error && (
-          <div className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-xs text-destructive">
-            <span>{error}</span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => void fetchTasks()}
-            >
-              Coba lagi
-            </Button>
-          </div>
-        )}
-
         <div className="grid flex-1 grid-cols-1 gap-5 md:grid-cols-3">
           {KANBAN_COLUMNS.map((column) => {
             const columnTasks = filteredTasks.filter(
@@ -248,12 +244,7 @@ export function KanbanBoard() {
                 </div>
 
                 <div className="flex flex-1 flex-col gap-2.5">
-                  {isLoading && tasks.length === 0 ? (
-                    <div className="space-y-2.5">
-                      <div className="h-24 animate-pulse rounded-lg border border-border/40 bg-muted/50" />
-                      <div className="h-24 animate-pulse rounded-lg border border-border/40 bg-muted/50" />
-                    </div>
-                  ) : columnTasks.length === 0 ? (
+                  {columnTasks.length === 0 ? (
                     <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border/60 px-4 py-10 text-center">
                       <p className="text-xs text-muted-foreground">
                         Tidak ada task
