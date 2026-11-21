@@ -27,6 +27,7 @@ import type {
 import { TaskCard } from "./TaskCard";
 import { TaskDialog } from "./TaskDialog";
 import { DeleteTaskDialog } from "./DeleteTaskDialog";
+import { AlertDemo, AlertType } from "./Alert";
 
 const KANBAN_COLUMNS: { id: TaskStatus; title: string }[] = [
   { id: "todo", title: "To Do" },
@@ -75,7 +76,11 @@ export function KanbanBoard() {
   const [priorityFilter, setPriorityFilter] = useState<"all" | TaskPriority>(
     "all",
   );
-  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const [alertMsg, setAlertMsg] = useState<boolean>(true);
+  const [alertType, setAlertType] = useState<AlertType>("none");
+
+  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("todo");
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
@@ -274,7 +279,6 @@ export function KanbanBoard() {
           })}
         </div>
       </div>
-
       <TaskDialog
         key={
           editingTask
@@ -288,6 +292,8 @@ export function KanbanBoard() {
         initialTask={editingTask}
         defaultStatus={defaultStatus}
         onSubmit={handleDialogSubmit}
+        onOpenAlert={setAlertMsg}
+        onEditAlertType={setAlertType}
       />
       <DeleteTaskDialog
         task={deletingTask}
@@ -295,7 +301,18 @@ export function KanbanBoard() {
           if (!open) setDeletingTask(null);
         }}
         onConfirm={handleConfirmDelete}
+        onOpenAlert={setAlertMsg}
+        onEditAlertType={setAlertType}
       />
-    </div>
+      {alertMsg ? (
+        <AlertDemo
+          alertType={alertType}
+          onEditAlertType={setAlertType}
+          open={alertMsg}
+          onOpenChange={setAlertMsg} />
+      ) : (
+        <div></div>
+      )}
+    </div >
   );
 }

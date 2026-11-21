@@ -24,6 +24,7 @@ import type {
   TaskPriority,
   TaskStatus,
 } from '../../types/kanban';
+import { AlertType } from './Alert';
 
 export interface TaskSubmitResult {
   ok: boolean;
@@ -37,6 +38,8 @@ interface TaskDialogProps {
   initialTask?: Task | null;
   defaultStatus?: TaskStatus;
   onSubmit: (payload: CreateTaskPayload) => Promise<TaskSubmitResult>;
+  onOpenAlert: (open: boolean) => void;
+  onEditAlertType: (alertType: AlertType) => void;
 }
 
 export function TaskDialog({
@@ -45,6 +48,8 @@ export function TaskDialog({
   initialTask,
   defaultStatus = 'todo',
   onSubmit,
+  onOpenAlert,
+  onEditAlertType,
 }: TaskDialogProps) {
   const [title, setTitle] = useState(initialTask?.title ?? '');
   const [description, setDescription] = useState(
@@ -99,6 +104,14 @@ export function TaskDialog({
     }
 
     onOpenChange(false);
+    if (initialTask) {
+      console.log("update");
+      onEditAlertType("update");
+    } else {
+      console.log("add");
+      onEditAlertType("add");
+    }
+    onOpenAlert(true);
   };
 
   return (
@@ -134,11 +147,10 @@ export function TaskDialog({
                 }
               }}
               aria-invalid={Boolean(fieldErrors.title)}
-              className={`h-9 text-sm ${
-                fieldErrors.title
-                  ? 'border-destructive focus-visible:ring-destructive'
-                  : ''
-              }`}
+              className={`h-9 text-sm ${fieldErrors.title
+                ? 'border-destructive focus-visible:ring-destructive'
+                : ''
+                }`}
             />
             {fieldErrors.title && (
               <p className="text-xs text-destructive">{fieldErrors.title}</p>
@@ -163,11 +175,10 @@ export function TaskDialog({
                 }
               }}
               aria-invalid={Boolean(fieldErrors.description)}
-              className={`h-9 text-sm ${
-                fieldErrors.description
-                  ? 'border-destructive focus-visible:ring-destructive'
-                  : ''
-              }`}
+              className={`h-9 text-sm ${fieldErrors.description
+                ? 'border-destructive focus-visible:ring-destructive'
+                : ''
+                }`}
             />
             {fieldErrors.description && (
               <p className="text-xs text-destructive">

@@ -12,17 +12,22 @@ import {
   DialogTitle,
 } from '../../components/ui/dialog';
 import type { Task } from '../../types/kanban';
+import { AlertType } from './Alert';
 
 interface DeleteTaskDialogProps {
   task: Task | null;
   onOpenChange: (open: boolean) => void;
   onConfirm: (id: string) => Promise<void>;
+  onOpenAlert: (open: boolean) => void;
+  onEditAlertType: (alertType: AlertType) => void;
 }
 
 export function DeleteTaskDialog({
   task,
   onOpenChange,
   onConfirm,
+  onOpenAlert,
+  onEditAlertType,
 }: DeleteTaskDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -32,6 +37,8 @@ export function DeleteTaskDialog({
     await onConfirm(task.id);
     setIsDeleting(false);
     onOpenChange(false);
+    onEditAlertType("delete");
+    onOpenAlert(true);
   };
 
   return (
