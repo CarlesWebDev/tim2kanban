@@ -8,7 +8,8 @@ export interface Task {
   createdAt: Date;
   updatedAt: Date;
 }
+
 export type Column = {
-    id: TaskStatus,
-    title: string,
-}
+  id: TaskStatus;
+  title: string;
+};
