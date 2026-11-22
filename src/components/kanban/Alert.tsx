@@ -28,7 +28,7 @@ export function AlertDemo({ alertType, onEditAlertType, open, onOpenChange }: Al
     return () => clearTimeout(timeout);
   }, [open, onOpenChange, onEditAlertType]);
   return (
-    <div className="grid w-full max-w-md items-start gap-4">
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4 pointer-events-none">
       {alertType == "add" ? (
         <Alert>
           <CheckCircle2Icon />
