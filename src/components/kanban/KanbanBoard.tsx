@@ -1,5 +1,5 @@
 "use client";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   CheckCircle2,
   Circle,
@@ -24,43 +24,11 @@ import type {
   TaskPriority,
   TaskStatus,
 } from "../../types/kanban";
+import { useKanbanStore } from "../../store/useKanbanStore";
 import { TaskCard } from "./TaskCard";
 import { TaskDialog } from "./TaskDialog";
 import { DeleteTaskDialog } from "./DeleteTaskDialog";
 import { AlertDemo, AlertType } from "./Alert";
-
-const KANBAN_COLUMNS: { id: TaskStatus; title: string }[] = [
-  { id: "todo", title: "To Do" },
-  { id: "in-progress", title: "In Progress" },
-  { id: "done", title: "Done" },
-];
-
-const INITIAL_TASKS: Task[] = [
-  {
-    id: "task-a1b2c3",
-    title: "Setup project Next.js",
-    description: "Inisialisasi project, Tailwind v4, dan shadcn/ui.",
-    status: "done",
-    priority: "high",
-  },
-  {
-    id: "task-d4e5f6",
-    title: "Bikin komponen TaskCard",
-    description: "Card task dengan badge priority dan select status.",
-    status: "in-progress",
-    priority: "medium",
-  },
-  {
-    id: "task-g7h8i9",
-    title: "Tambah fitur drag and drop",
-    description: "Pindahin task antar kolom dengan drag and drop.",
-    status: "todo",
-    priority: "low",
-  },
-];
-
-const generateId = () =>
-  `task-${crypto.randomUUID().replace(/-/g, "").slice(0, 6)}`;
 
 const columnIcons: Record<TaskStatus, ReactNode> = {
   todo: <Circle className="h-3.5 w-3.5 text-muted-foreground" />,
@@ -69,21 +37,34 @@ const columnIcons: Record<TaskStatus, ReactNode> = {
 };
 
 export function KanbanBoard() {
-  // Data lokal (FE only), tanpa store dan tanpa backend
-  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+  const {
+    tasks,
+    columns,
+    isLoading,
+    error,
+    fetchTasks,
+    addTask,
+    updateTask,
+    moveTask,
+    deleteTask,
+  } = useKanbanStore();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<"all" | TaskPriority>(
     "all",
   );
 
-  const [alertMsg, setAlertMsg] = useState<boolean>(true);
+  const [alertMsg, setAlertMsg] = useState<boolean>(false);
   const [alertType, setAlertType] = useState<AlertType>("none");
 
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("todo");
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   const filteredTasks = tasks.filter((task) => {
     const matchesPriority =
@@ -92,7 +73,7 @@ export function KanbanBoard() {
     const matchesQuery =
       !keyword ||
       task.title.toLowerCase().includes(keyword) ||
-      task.description.toLowerCase().includes(keyword);
+      (task.description ?? "").toLowerCase().includes(keyword);
     return matchesPriority && matchesQuery;
   });
 
@@ -108,7 +89,8 @@ export function KanbanBoard() {
   };
 
   const handleConfirmDelete = async (id: string) => {
-    setTasks((prev) => prev.filter((task) => task.id !== id));
+    await deleteTask(id);
+    setDeletingTask(null);
   };
 
   const handleOpenEdit = (task: Task) => {
@@ -118,22 +100,20 @@ export function KanbanBoard() {
   };
 
   const handleDialogSubmit = async (payload: CreateTaskPayload) => {
-    if (editingTask) {
-      setTasks((prev) =>
-        prev.map((task) =>
-          task.id === editingTask.id ? { ...task, ...payload } : task,
-        ),
-      );
-    } else {
-      setTasks((prev) => [{ id: generateId(), ...payload }, ...prev]);
+    try {
+      if (editingTask) {
+        await updateTask({ id: editingTask.id, ...payload });
+      } else {
+        await addTask(payload);
+      }
+      return { ok: true };
+    } catch {
+      return { ok: false };
     }
-    return { ok: true };
   };
 
-  const handleStatusChange = (id: string, status: TaskStatus) => {
-    setTasks((prev) =>
-      prev.map((task) => (task.id === id ? { ...task, status } : task)),
-    );
+  const handleStatusChange = async (id: string, status: TaskStatus) => {
+    await moveTask(id, status);
   };
 
   return (
@@ -209,76 +189,88 @@ export function KanbanBoard() {
         </div>
       </header>
 
-      {/* Main Board Canvas */}
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
-        <div className="grid flex-1 grid-cols-1 gap-5 md:grid-cols-3">
-          {KANBAN_COLUMNS.map((column) => {
-            const columnTasks = filteredTasks.filter(
-              (task) => task.status === column.id,
-            );
+        {error && (
+          <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-2.5 text-xs text-destructive">
+            {error}
+          </div>
+        )}
 
-            return (
-              <section
-                key={column.id}
-                className="flex flex-col rounded-xl border border-border/60 bg-muted/25 p-3"
-              >
-                <div className="mb-3 flex items-center justify-between px-1">
-                  <div className="flex items-center gap-2">
-                    {columnIcons[column.id]}
-                    <h2 className="text-xs font-semibold tracking-wide text-foreground/90">
-                      {column.title}
-                    </h2>
-                    <Badge
-                      variant="secondary"
-                      className="h-5 min-w-5 justify-center rounded-md px-1.5 text-[11px] font-medium tabular-nums"
+        {isLoading ? (
+          <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
+            Memuat tasks...
+          </div>
+        ) : (
+          <div className="grid flex-1 grid-cols-1 gap-5 md:grid-cols-3">
+            {columns.map((column) => {
+              const columnTasks = filteredTasks.filter(
+                (task) => task.status === column.id,
+              );
+
+              return (
+                <section
+                  key={column.id}
+                  className="flex flex-col rounded-xl border border-border/60 bg-muted/25 p-3"
+                >
+                  <div className="mb-3 flex items-center justify-between px-1">
+                    <div className="flex items-center gap-2">
+                      {columnIcons[column.id]}
+                      <h2 className="text-xs font-semibold tracking-wide text-foreground/90">
+                        {column.title}
+                      </h2>
+                      <Badge
+                        variant="secondary"
+                        className="h-5 min-w-5 justify-center rounded-md px-1.5 text-[11px] font-medium tabular-nums"
+                      >
+                        {columnTasks.length}
+                      </Badge>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                      onClick={() => handleOpenCreate(column.id)}
+                      aria-label={`Tambah task ke ${column.title}`}
                     >
-                      {columnTasks.length}
-                    </Badge>
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
 
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                    onClick={() => handleOpenCreate(column.id)}
-                    aria-label={`Tambah task ke ${column.title}`}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-
-                <div className="flex flex-1 flex-col gap-2.5">
-                  {columnTasks.length === 0 ? (
-                    <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border/60 px-4 py-10 text-center">
-                      <p className="text-xs text-muted-foreground">
-                        Tidak ada task
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenCreate(column.id)}
-                        className="mt-1.5 text-xs font-medium text-foreground/75 underline-offset-4 hover:text-foreground hover:underline"
-                      >
-                        Tambah ke {column.title}
-                      </button>
-                    </div>
-                  ) : (
-                    columnTasks.map((task) => (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        onEdit={handleOpenEdit}
-                        onDelete={handleRequestDelete}
-                        onStatusChange={handleStatusChange}
-                      />
-                    ))
-                  )}
-                </div>
-              </section>
-            );
-          })}
-        </div>
+                  <div className="flex flex-1 flex-col gap-2.5">
+                    {columnTasks.length === 0 ? (
+                      <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border/60 px-4 py-10 text-center">
+                        <p className="text-xs text-muted-foreground">
+                          Tidak ada task
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenCreate(column.id)}
+                          className="mt-1.5 text-xs font-medium text-foreground/75 underline-offset-4 hover:text-foreground hover:underline"
+                        >
+                          Tambah ke {column.title}
+                        </button>
+                      </div>
+                    ) : (
+                      columnTasks.map((task) => (
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          onEdit={handleOpenEdit}
+                          onDelete={handleRequestDelete}
+                          onStatusChange={handleStatusChange}
+                        />
+                      ))
+                    )}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        )}
       </div>
+
       <TaskDialog
         key={
           editingTask
@@ -295,6 +287,7 @@ export function KanbanBoard() {
         onOpenAlert={setAlertMsg}
         onEditAlertType={setAlertType}
       />
+
       <DeleteTaskDialog
         task={deletingTask}
         onOpenChange={(open) => {
@@ -304,15 +297,15 @@ export function KanbanBoard() {
         onOpenAlert={setAlertMsg}
         onEditAlertType={setAlertType}
       />
+
       {alertMsg ? (
         <AlertDemo
           alertType={alertType}
           onEditAlertType={setAlertType}
           open={alertMsg}
-          onOpenChange={setAlertMsg} />
-      ) : (
-        <div></div>
-      )}
-    </div >
+          onOpenChange={setAlertMsg}
+        />
+      ) : null}
+    </div>
   );
 }

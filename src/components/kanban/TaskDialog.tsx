@@ -70,7 +70,6 @@ export function TaskDialog({
     setFieldErrors({});
     setFormError(null);
 
-    // Validasi cepat di client sebelum hit API
     const nextErrors: Record<string, string> = {};
     if (!title.trim()) {
       nextErrors.title = 'Judul task tidak boleh kosong';
@@ -93,7 +92,6 @@ export function TaskDialog({
     });
     setIsSubmitting(false);
 
-    // Kalau backend Hono nolak (400 / 500), tampilkan error & jangan tutup modal
     if (!result.ok) {
       if (result.fieldErrors && Object.keys(result.fieldErrors).length > 0) {
         setFieldErrors(result.fieldErrors);

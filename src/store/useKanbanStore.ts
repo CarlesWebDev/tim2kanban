@@ -1,11 +1,12 @@
-import { create } from 'zustand';
-import { columns } from '@/data/kanban';
-import { Column, Task, TaskStatus } from '@/types/kanban';
+import { create } from "zustand";
+import { columns } from "@/data/kanban";
+import { Column, Task, TaskPriority, TaskStatus } from "@/types/kanban";
 
 interface CreateTaskInput {
   title: string;
   description?: string;
   status?: TaskStatus;
+  priority?: TaskPriority;
 }
 
 interface UpdateTaskInput {
@@ -13,6 +14,7 @@ interface UpdateTaskInput {
   title?: string;
   description?: string;
   status?: TaskStatus;
+  priority?: TaskPriority;
 }
 
 interface KanbanStore {
@@ -27,7 +29,7 @@ interface KanbanStore {
   deleteTask: (id: string) => Promise<void>;
 }
 
-type TaskApiPayload = Omit<Task, 'createdAt' | 'updatedAt'> & {
+type TaskApiPayload = Omit<Task, "createdAt" | "updatedAt"> & {
   createdAt: string | Date;
   updatedAt: string | Date;
 };
@@ -47,13 +49,13 @@ export const useKanbanStore = create<KanbanStore>((set, get) => ({
   fetchTasks: async () => {
     set({ isLoading: true, error: null });
     try {
-      const res = await fetch('/api/tasks', { cache: 'no-store' });
-      if (!res.ok) throw new Error('Gagal mengambil data tasks');
+      const res = await fetch("/api/tasks", { cache: "no-store" });
+      if (!res.ok) throw new Error("Gagal mengambil data tasks");
       const data = await res.json();
       set({ tasks: data.map(normalizeTask), isLoading: false });
     } catch (err) {
       set({
-        error: err instanceof Error ? err.message : 'Terjadi kesalahan',
+        error: err instanceof Error ? err.message : "Terjadi kesalahan",
         isLoading: false,
       });
     }
@@ -61,29 +63,29 @@ export const useKanbanStore = create<KanbanStore>((set, get) => ({
 
   addTask: async (input) => {
     set({ error: null });
-    const res = await fetch('/api/tasks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     });
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || 'Gagal menambah task');
+      throw new Error(errData.error || "Gagal menambah task");
     }
     const created = normalizeTask(await res.json());
-    set({ tasks: [...get().tasks, created] });
+    set({ tasks: [created, ...get().tasks] });
   },
 
   updateTask: async (input) => {
     set({ error: null });
-    const res = await fetch('/api/tasks', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/tasks", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     });
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || 'Gagal mengupdate task');
+      throw new Error(errData.error || "Gagal mengupdate task");
     }
     const updated = normalizeTask(await res.json());
     set({
@@ -98,11 +100,11 @@ export const useKanbanStore = create<KanbanStore>((set, get) => ({
   deleteTask: async (id) => {
     set({ error: null });
     const res = await fetch(`/api/tasks?id=${encodeURIComponent(id)}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || 'Gagal menghapus task');
+      throw new Error(errData.error || "Gagal menghapus task");
     }
     set({ tasks: get().tasks.filter((t) => t.id !== id) });
   },
