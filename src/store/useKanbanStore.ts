@@ -1,13 +1,13 @@
 import { create } from "zustand";
 import { columns } from "@/data/kanban";
-import { hc } from "hono/client"
+import { hc } from "hono/client";
 import type { AppType } from "@/server";
 import { Column, Task, TaskPriority, TaskStatus } from "@/types/kanban";
-import { json } from "zod";
+import type { TaskSubmitResult } from "@/components/kanban/TaskDialog";
 
 interface CreateTaskInput {
   title: string;
-  description?: string;
+  description: string;
   status?: TaskStatus;
   priority?: TaskPriority;
 }
@@ -26,8 +26,8 @@ interface KanbanStore {
   isLoading: boolean;
   error: string | null;
   fetchTasks: () => Promise<void>;
-  addTask: (input: CreateTaskInput) => Promise<void>;
-  updateTask: (input: UpdateTaskInput) => Promise<void>;
+  addTask: (input: CreateTaskInput) => Promise<TaskSubmitResult>;
+  updateTask: (input: UpdateTaskInput) => Promise<TaskSubmitResult>;
   moveTask: (id: string, status: TaskStatus) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
 }
@@ -45,6 +45,24 @@ const normalizeTask = (raw: TaskApiPayload): Task => ({
   updatedAt: new Date(raw.updatedAt),
 });
 
+const parseErrorResponse = async (
+  res: Response,
+  fallback: string
+): Promise<TaskSubmitResult> => {
+  const errData = await res.json().catch(() => ({}));
+  return {
+    ok: false,
+    error:
+      "error" in errData && typeof errData.error === "string"
+        ? errData.error
+        : fallback,
+    fieldErrors:
+      "fieldErrors" in errData && typeof errData.fieldErrors === "object"
+        ? (errData.fieldErrors as Record<string, string>)
+        : undefined,
+  };
+};
+
 export const useKanbanStore = create<KanbanStore>((set, get) => ({
   tasks: [],
   columns,
@@ -54,8 +72,9 @@ export const useKanbanStore = create<KanbanStore>((set, get) => ({
   fetchTasks: async () => {
     set({ isLoading: true, error: null });
     try {
-      //const res = await fetch("/api/tasks", { cache: "no-store" });
-      const res = await client.api.tasks.$get({ cache: "no-store" });
+      const res = await client.api.tasks.$get({}, {
+        init: { cache: "no-store" },
+      });
       if (!res.ok) throw new Error("Gagal mengambil data tasks");
       const data = await res.json();
       set({ tasks: data.map(normalizeTask), isLoading: false });
@@ -69,60 +88,43 @@ export const useKanbanStore = create<KanbanStore>((set, get) => ({
 
   addTask: async (input) => {
     set({ error: null });
-    /*const res = await fetch("/api/tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    });*/
-    const res = await client.api.tasks.$post({ json: input })
+    const res = await client.api.tasks.$post({ json: input });
     if (!res.ok) {
-      //const errData = await res.json().catch(() => ({}));
-      const errData = await res.json();
-      throw new Error(errData.error || "Gagal menambah task");
+      return parseErrorResponse(res, "Gagal menambah task");
     }
     const created = normalizeTask(await res.json());
     set({ tasks: [created, ...get().tasks] });
+    return { ok: true };
   },
 
   updateTask: async (input) => {
     set({ error: null });
-    /*const res = await fetch("/api/tasks", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    });*/
-
-    const res = await client.api.tasks.$patch({ json: input })
+    const res = await client.api.tasks.$patch({ json: input });
     if (!res.ok) {
-      //const errData = await res.json().catch(() => ({}));
-      const errData = await res.json();
-      throw new Error(errData.error || "Gagal mengupdate task");
+      return parseErrorResponse(res, "Gagal mengupdate task");
     }
     const updated = normalizeTask(await res.json());
     set({
       tasks: get().tasks.map((t) => (t.id === updated.id ? updated : t)),
     });
+    return { ok: true };
   },
 
   moveTask: async (id, status) => {
-    await get().updateTask({ id, status });
+    const result = await get().updateTask({ id, status });
+    if (!result.ok) {
+      set({ error: result.error ?? "Gagal memindahkan task" });
+    }
   },
 
   deleteTask: async (id) => {
     set({ error: null });
-    /*const res = await fetch(`/api/tasks?id=${encodeURIComponent(id)}`, {
-      method: "DELETE",
-    });*/
-
     const res = await client.api.tasks.$delete({
-      query: {
-        id: id
-      }
-    })
+      query: { id },
+    });
     if (!res.ok) {
-      const errData = await res.json();
-      //const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || "Gagal menghapus task");
+      const errResult = await parseErrorResponse(res, "Gagal menghapus task");
+      throw new Error(errResult.error);
     }
     set({ tasks: get().tasks.filter((t) => t.id !== id) });
   },

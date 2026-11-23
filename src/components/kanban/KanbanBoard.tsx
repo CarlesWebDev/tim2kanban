@@ -1,13 +1,6 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
-import {
-  CheckCircle2,
-  Circle,
-  CircleDot,
-  Plus,
-  Search,
-  X,
-} from "lucide-react";
+import { CheckCircle2, Circle, CircleDot, Plus, Search, X } from "lucide-react";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -117,8 +110,8 @@ export function KanbanBoard() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-10 border-b border-border/60 bg-background/85 backdrop-blur-md">
+    <div className="flex min-h-screen flex-col md:h-screen md:overflow-hidden">
+      <header className="sticky top-0 z-10 shrink-0 border-b border-border/60 bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="flex items-center gap-3">
             <h1 className="text-base font-semibold tracking-tight text-foreground">
@@ -189,9 +182,9 @@ export function KanbanBoard() {
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6 md:min-h-0">
         {error && (
-          <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-2.5 text-xs text-destructive">
+          <div className="shrink-0 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-2.5 text-xs text-destructive">
             {error}
           </div>
         )}
@@ -201,7 +194,7 @@ export function KanbanBoard() {
             Memuat tasks...
           </div>
         ) : (
-          <div className="grid flex-1 grid-cols-1 gap-5 md:grid-cols-3">
+          <div className="grid flex-1 grid-cols-1 gap-5 md:min-h-0 md:grid-cols-3 md:grid-rows-1">
             {columns.map((column) => {
               const columnTasks = filteredTasks.filter(
                 (task) => task.status === column.id,
@@ -210,9 +203,9 @@ export function KanbanBoard() {
               return (
                 <section
                   key={column.id}
-                  className="flex flex-col rounded-xl border border-border/60 bg-muted/25 p-3"
+                  className="flex flex-col rounded-xl border border-border/60 bg-muted/25 p-3 md:min-h-0 md:overflow-hidden"
                 >
-                  <div className="mb-3 flex items-center justify-between px-1">
+                  <div className="mb-3 flex shrink-0 items-center justify-between px-1">
                     <div className="flex items-center gap-2">
                       {columnIcons[column.id]}
                       <h2 className="text-xs font-semibold tracking-wide text-foreground/90">
@@ -238,9 +231,9 @@ export function KanbanBoard() {
                     </Button>
                   </div>
 
-                  <div className="flex flex-1 flex-col gap-2.5">
+                  <div className="flex-1 md:min-h-0 md:overflow-y-auto md:pr-1">
                     {columnTasks.length === 0 ? (
-                      <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border/60 px-4 py-10 text-center">
+                      <div className="flex h-full flex-col items-center justify-center rounded-lg border border-dashed border-border/60 px-4 py-10 text-center">
                         <p className="text-xs text-muted-foreground">
                           Tidak ada task
                         </p>
@@ -253,15 +246,17 @@ export function KanbanBoard() {
                         </button>
                       </div>
                     ) : (
-                      columnTasks.map((task) => (
-                        <TaskCard
-                          key={task.id}
-                          task={task}
-                          onEdit={handleOpenEdit}
-                          onDelete={handleRequestDelete}
-                          onStatusChange={handleStatusChange}
-                        />
-                      ))
+                      <div className="space-y-2.5">
+                        {columnTasks.map((task) => (
+                          <TaskCard
+                            key={task.id}
+                            task={task}
+                            onEdit={handleOpenEdit}
+                            onDelete={handleRequestDelete}
+                            onStatusChange={handleStatusChange}
+                          />
+                        ))}
+                      </div>
                     )}
                   </div>
                 </section>

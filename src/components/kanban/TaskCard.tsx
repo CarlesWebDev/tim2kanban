@@ -43,7 +43,7 @@ export function TaskCard({
   const shortId = task.id.replace("task-", "TSK-").slice(0, 7).toUpperCase();
 
   return (
-    <Card className="group gap-3 rounded-lg border-border/70 bg-card py-3.5 shadow-none transition-colors hover:border-foreground/25">
+    <Card className="group shrink-0 gap-3 rounded-lg border-border/70 bg-card py-3.5 shadow-none transition-colors hover:border-foreground/25">
       <CardHeader className="gap-1.5 px-3.5 pb-0">
         <div className="flex items-center justify-between gap-2">
           <span className="font-mono text-[11px] tracking-tight text-muted-foreground">
