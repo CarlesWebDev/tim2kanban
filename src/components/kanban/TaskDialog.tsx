@@ -103,10 +103,8 @@ export function TaskDialog({
 
     onOpenChange(false);
     if (initialTask) {
-      console.log("update");
       onEditAlertType("update");
     } else {
-      console.log("add");
       onEditAlertType("add");
     }
     onOpenAlert(true);

@@ -1,6 +1,9 @@
 import { create } from "zustand";
 import { columns } from "@/data/kanban";
+import { hc } from "hono/client"
+import type { AppType } from "@/server";
 import { Column, Task, TaskPriority, TaskStatus } from "@/types/kanban";
+import { json } from "zod";
 
 interface CreateTaskInput {
   title: string;
@@ -34,6 +37,8 @@ type TaskApiPayload = Omit<Task, "createdAt" | "updatedAt"> & {
   updatedAt: string | Date;
 };
 
+const client = hc<AppType>("/");
+
 const normalizeTask = (raw: TaskApiPayload): Task => ({
   ...raw,
   createdAt: new Date(raw.createdAt),
@@ -49,7 +54,8 @@ export const useKanbanStore = create<KanbanStore>((set, get) => ({
   fetchTasks: async () => {
     set({ isLoading: true, error: null });
     try {
-      const res = await fetch("/api/tasks", { cache: "no-store" });
+      //const res = await fetch("/api/tasks", { cache: "no-store" });
+      const res = await client.api.tasks.$get({ cache: "no-store" });
       if (!res.ok) throw new Error("Gagal mengambil data tasks");
       const data = await res.json();
       set({ tasks: data.map(normalizeTask), isLoading: false });
@@ -63,13 +69,15 @@ export const useKanbanStore = create<KanbanStore>((set, get) => ({
 
   addTask: async (input) => {
     set({ error: null });
-    const res = await fetch("/api/tasks", {
+    /*const res = await fetch("/api/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
-    });
+    });*/
+    const res = await client.api.tasks.$post({ json: input })
     if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
+      //const errData = await res.json().catch(() => ({}));
+      const errData = await res.json();
       throw new Error(errData.error || "Gagal menambah task");
     }
     const created = normalizeTask(await res.json());
@@ -78,13 +86,16 @@ export const useKanbanStore = create<KanbanStore>((set, get) => ({
 
   updateTask: async (input) => {
     set({ error: null });
-    const res = await fetch("/api/tasks", {
+    /*const res = await fetch("/api/tasks", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
-    });
+    });*/
+
+    const res = await client.api.tasks.$patch({ json: input })
     if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
+      //const errData = await res.json().catch(() => ({}));
+      const errData = await res.json();
       throw new Error(errData.error || "Gagal mengupdate task");
     }
     const updated = normalizeTask(await res.json());
@@ -99,11 +110,18 @@ export const useKanbanStore = create<KanbanStore>((set, get) => ({
 
   deleteTask: async (id) => {
     set({ error: null });
-    const res = await fetch(`/api/tasks?id=${encodeURIComponent(id)}`, {
+    /*const res = await fetch(`/api/tasks?id=${encodeURIComponent(id)}`, {
       method: "DELETE",
-    });
+    });*/
+
+    const res = await client.api.tasks.$delete({
+      query: {
+        id: id
+      }
+    })
     if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
+      const errData = await res.json();
+      //const errData = await res.json().catch(() => ({}));
       throw new Error(errData.error || "Gagal menghapus task");
     }
     set({ tasks: get().tasks.filter((t) => t.id !== id) });
